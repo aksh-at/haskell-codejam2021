@@ -1,11 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MultiWayIf #-}
 
 import Control.Arrow
 import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import Data.Char
 import Data.List (foldl', group)
--- import Debug.Trace
 import Text.Printf
 import Data.Maybe (fromJust)
 import System.IO
@@ -37,11 +37,16 @@ getToken ('J':_) = J
 getToken i = Q $ length i
 
 asymCost :: Int -> Int -> Int -> Bool -> Int
-asymCost x y i moreCJ = minimum [0, cjs * x + jcs * y, singleCost]
+asymCost x y 0 _ = 0
+asymCost x y i moreCJ = minimum [0, cjs * x + jcs * y, singleCost, doubleCost, gdi]
   where
     cjs = if moreCJ then i - (i `div` 2) else i `div` 2
     jcs = if moreCJ then i `div` 2 else i - (i `div` 2)
     singleCost = if moreCJ then x else y
+    doubleCost = (i `div` 2) * (x + y)
+    gdi = if | i `mod` 2 == 1 -> 0
+             | moreCJ -> doubleCost - y
+             | otherwise -> doubleCost - x
 
 countQ :: Int -> Int -> (Token, Token, Token) -> Int
 countQ x y (End, Q i, C) = asymCost x y i False
